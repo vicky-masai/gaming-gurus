@@ -5,12 +5,16 @@ const Chess = () => {
 
   return (
     <div className='w-100 mx-auto my-2'>
-        <center><h2>User 1</h2></center>
-        <div className='w-60 h-60 mx-auto my-2 grid grid-cols-8 grid-row-8 gap-2'>
+        <center><img src="https://www.kindpng.com/picc/m/105-1055656_account-user-profile-avatar-avatar-user-profile-icon.png" className="flex justify-center drop-shadow-md" style={{width:"100px", height:"100px", borderRadius:"50%", alignItems:"center"}} />
+        <h2>Vicky</h2>
+        </center>
+        <div style={{width:"60%", height:"600px", display:"grid", gridTemplateColumns:"repeat(8, 1fr)", gridTemplateRows:"repeat(8,1fr)",margin:"10px auto",gap:"10px"}}>
         {arr.map((el,i)=> <div className='drop-shadow-md odd:bg-green-600 even:bg-red-950 text-lime-50 flex justify-center items-center'></div> )}
 
         </div>
-        <center><h2>User 2</h2></center>
+        <center><img src="https://www.kindpng.com/picc/m/105-1055656_account-user-profile-avatar-avatar-user-profile-icon.png" className="flex justify-center drop-shadow-md" style={{width:"100px", height:"100px", borderRadius:"50%", alignItems:"center"}} />
+        <h2>Abhisek</h2>
+        </center>
 
         
     </div>
