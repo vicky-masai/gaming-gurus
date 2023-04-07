@@ -1,12 +1,22 @@
+// game states: activePlayer, playerScore, pastMoves, timeRemaining
+// game actions: movePiece
+
+const arguments = process.argv;
+
 class Game {
-	#size = 8;
-	#board = [];
-	#homeRows = 3;
-	#activePlayer = "a";
+	#size;
+	#board;
+	#homeRows;
+	#activePlayer;
+	#playerScore;
+	#winner;
+	#selectedPosition;
+	#possibleMovesForSelectedPosition;
+	#pastMoves;
 
 	// position = {r, c}
 
-	// change piece from letter to {type, direction}
+	// change piece from letter to {player: "a" | "b", type: "plain" | "king"}
 
 	// a = Player A
 	// A = King of Player A
@@ -14,6 +24,20 @@ class Game {
 	// B = King of Player B
 
 	constructor() {
+		this.startGame();
+	}
+
+	startGame() {
+		this.#size = 8;
+		this.#board = [];
+		this.#homeRows = 3;
+		this.#activePlayer = "a";
+		this.#playerScore = { a: 0, b: 0 };
+		this.#winner = "pending";
+		this.#selectedPosition = null;
+		this.#possibleMovesForSelectedPosition = [];
+		this.#pastMoves = [];
+
 		for (let r = 0; r < this.#size; r++) {
 			let row = new Array(this.#size).fill(" ");
 			this.#board.push(row);
@@ -30,65 +54,158 @@ class Game {
 				this.#board[r][c] = "a";
 			}
 		}
+
+		this.printStatus();
 	}
 
 	getActivePlayer() {
 		return this.#activePlayer;
 	}
 
-	togglePlayer() {
+	toggleActivePlayer() {
 		this.#activePlayer = this.#activePlayer === "a" ? "b" : "a";
 	}
 
-	getPossibleMoves(position1) {
-		const { r, c } = position1;
+	move(position1, position2) {
+		console.log("\n\n\n");
+		console.log("move", position1, position2);
+
+		const { r: r1, c: c1 } = position1;
+		const { r: r2, c: c2 } = position2;
+
+		const piece1 = this.#board[r1][c1];
+		const piece2 = this.#board[r2][c2];
+
+		if (this.isActivePlayer(piece1) === false) {
+			// console.log("player at position1 is not active player");
+			return;
+		}
+
+		if (this.isMovePossible(position1, position2) === false) {
+			// console.log("move is not possible");
+			return;
+		}
+
+		const stepX = (position2.c - position1.c) / Math.abs(position2.c - position1.c);
+		const stepY = (position2.r - position1.r) / Math.abs(position2.r - position1.r);
+
+		const p1 = this.pieceAt({ r: r1, c: c1 });
+		const p2 = this.pieceAt({ r: r1 + stepY, c: c1 + stepX });
+		if (
+			this.diagonalDistance(position1, position2) === 2 &&
+			this.areOppositePieces(p1, p2) === true
+		) {
+			// killing the opponent
+			this.#board[r1 + stepY][c1 + stepX] = " ";
+			this.incrementActivePlayerScore();
+			// do further bonus moves till no such moves are avaiable
+		}
+
+		// moving the piece
+		[this.#board[r1][c1], this.#board[r2][c2]] = [this.#board[r2][c2], this.#board[r1][c1]];
+
+		// turning the piece1 to king if reached at opponent home
+		if (piece1 === "a" && r2 === 0) {
+			this.#board[r2][c2] = "A";
+		} else if (piece1 === "b" && r2 === this.#size - 1) {
+			this.#board[r2][c2] = "B";
+		}
+
+		this.#pastMoves.push({ from: position1, to: position2 });
+		this.updateWinner();
+		this.toggleActivePlayer();
+
+		this.printStatus();
+	}
+
+	pieceAt(position) {
+		return this.#board[position.r][position.c];
+	}
+
+	incrementActivePlayerScore() {
+		this.#playerScore[this.#activePlayer]++;
+	}
+
+	isActivePlayer(piece) {
+		if (this.#activePlayer === "a" && (piece === "a" || piece === "A")) {
+			return true;
+		}
+		if (this.#activePlayer === "b" && (piece === "b" || piece === "B")) {
+			return true;
+		}
+		return false;
+	}
+
+	getPossibleMoves(position) {
+		const { r, c } = position;
 		const possibleMoves = [];
 		const piece = this.#board[r][c];
+
 		if (piece === " ") {
 			return possibleMoves;
 		}
-		const position2TopLeft = { r: position1.r - 1, c: position1.c - 1 };
-		const position2TopRight = { r: position1.r - 1, c: position1.c + 1 };
-		const position2BottomLeft = { r: position1.r + 1, c: position1.c - 1 };
-		const position2BottomRight = { r: position1.r + 1, c: position1.c + 1 };
+
+		const position2TopLeft = { r: r - 1, c: c - 1 };
+		const position2TopRight = { r: r - 1, c: c + 1 };
+		const position2BottomLeft = { r: r + 1, c: c - 1 };
+		const position2BottomRight = { r: r + 1, c: c + 1 };
+
+		// computing possible moves in top-left direction
 		while (
 			(piece === "a" || piece === "A" || piece === "B") &&
-			this.isMovePossible(position1, position2TopLeft) === true
+			this.isInsideBoard(position2TopLeft) === true
 		) {
-			possibleMoves.push({ ...position2TopLeft });
+			if (this.isMovePossible(position, position2TopLeft) === true) {
+				possibleMoves.push({ ...position2TopLeft });
+			}
 			position2TopLeft.r--;
 			position2TopLeft.c--;
 		}
+
+		// computing possible moves in top-right direction
 		while (
 			(piece === "a" || piece === "A" || piece === "B") &&
-			this.isMovePossible(position1, position2TopRight) === true
+			this.isInsideBoard(position2TopRight) === true
 		) {
-			possibleMoves.push({ ...position2TopRight });
+			if (this.isMovePossible(position, position2TopRight) === true) {
+				possibleMoves.push({ ...position2TopRight });
+			}
 			position2TopRight.r--;
 			position2TopRight.c++;
 		}
+
+		// computing possible moves in bottom-left direction
 		while (
 			(piece === "b" || piece === "A" || piece === "B") &&
-			this.isMovePossible(position1, position2BottomLeft) === true
+			this.isInsideBoard(position2BottomLeft) === true
 		) {
-			possibleMoves.push({ ...position2BottomLeft });
+			if (this.isMovePossible(position, position2BottomLeft) === true) {
+				possibleMoves.push({ ...position2BottomLeft });
+			}
 			position2BottomLeft.r++;
 			position2BottomLeft.c--;
 		}
+
+		// computing possible moves in top-left direction
 		while (
 			(piece === "b" || piece === "A" || piece === "B") &&
-			this.isMovePossible(position1, position2BottomRight) === true
+			this.isInsideBoard(position2BottomRight) === true
 		) {
-			possibleMoves.push({ ...position2BottomRight });
+			if (this.isMovePossible(position, position2BottomRight) === true) {
+				possibleMoves.push({ ...position2BottomRight });
+			}
 			position2BottomRight.r++;
 			position2BottomRight.c++;
 		}
+
+		// adding killing moves if any
+
 		return possibleMoves;
 	}
 
 	isMovePossible(position1, position2) {
 		if (this.isInsideBoard(position1) === false || this.isInsideBoard(position2) === false) {
-			console.log("position1 or position2 is not inside board");
+			// console.log("position1 or position2 is not inside board");
 			return false;
 		}
 
@@ -98,18 +215,29 @@ class Game {
 		const piece2 = this.#board[r2][c2];
 
 		if (piece1 === " " || piece2 !== " ") {
-			console.log("position1 should have a piece and position2 should be empty");
+			// console.log("position1 should have a piece and position2 should be empty");
 			return false;
 		}
 
 		// here, piece1 can be "a", "b", "A", "B" and piece2 is " "
+
+		// "a" and "b" can move only on their forward direction
+		if (piece1 === "a" && r2 > r1) {
+			// console.log(`${piece1} can only move up`);
+			return false;
+		}
+
+		if (piece1 === "b" && r2 < r1) {
+			// console.log(`${piece1} can only move down`);
+			return false;
+		}
 
 		// path should be clean to be it possible move except
 
 		const diagonalDistance = this.diagonalDistance(position1, position2);
 
 		if (diagonalDistance === null) {
-			console.log("position1 and position2 are not along diagonal");
+			// console.log("position1 and position2 are not along diagonal");
 			return false;
 		}
 
@@ -117,7 +245,12 @@ class Game {
 			return true;
 		}
 
-		if (diagonalDistance === 2 && this.areOppositePieces(piece1, piece2) === true) {
+		const stepX = (c2 - c1) / Math.abs(c2 - c1);
+		const stepY = (r2 - r1) / Math.abs(r2 - r1);
+
+		const p1 = this.pieceAt({ r: r1, c: c1 });
+		const p2 = this.pieceAt({ r: r1 + stepY, c: c1 + stepX });
+		if (diagonalDistance === 2 && this.areOppositePieces(p1, p2) === true) {
 			return true;
 		}
 
@@ -125,15 +258,13 @@ class Game {
 
 		// if path is clean between the positions, return true, else false
 
-		const stepX = (position2.c - position1.c) / Math.abs(position2.c - position1.c);
-		const stepY = (position2.r - position1.r) / Math.abs(position2.r - position1.r);
-		const position = { r: position1.r + stepY, c: position1.c + stepX };
+		const position = { r: r1, c: c1 };
 
 		while (position.r !== position2.r) {
 			position.r += stepY;
 			position.c += stepX;
 			if (this.#board[position.r][position.c] !== " ") {
-				console.log("path between position1 and position2 is not clean");
+				// console.log("path between position1 and position2 is not clean");
 				return false;
 			}
 		}
@@ -142,12 +273,15 @@ class Game {
 	}
 
 	areOppositePieces(piece1, piece2) {
-		if ((piece1 === "a" || piece2 === "A") && (piece2 === "b" || piece2 === "B")) {
+		if ((piece1 === "a" || piece1 === "A") && (piece2 === "b" || piece2 === "B")) {
+			// console.log(piece1, piece2, "are opposite");
 			return true;
 		}
-		if ((piece1 === "b" || piece2 === "B") && (piece2 === "a" || piece2 === "A")) {
+		if ((piece1 === "b" || piece1 === "B") && (piece2 === "a" || piece2 === "A")) {
+			// console.log(piece1, piece2, "are opposite");
 			return true;
 		}
+		// console.log(piece1, piece2, "are not opposite");
 		return false;
 	}
 
@@ -167,7 +301,39 @@ class Game {
 		);
 	}
 
-	print(empty = ".") {
+	updateWinner() {
+		// winner = "pending" | "a" | "b"
+		let avaiableMoves = { a: 0, b: 0 };
+		for (let r = 0; r < this.#size; r++) {
+			for (let c = 0; c < this.#size; c++) {
+				const piece = this.#board[r][c];
+				if (piece === "a" || piece === "A") {
+					avaiableMoves["a"] += this.getPossibleMoves({ r, c }).length;
+				} else if (piece === "b" || piece === "B") {
+					avaiableMoves["b"] += this.getPossibleMoves({ r, c }).length;
+				}
+			}
+		}
+		if (this.#activePlayer === "a" && avaiableMoves["a"] === 0) {
+			this.#winner = "b";
+		} else if (this.#activePlayer === "b" && avaiableMoves["b"] === 0) {
+			this.#winner = "a";
+		} else {
+			this.#winner = "pending";
+		}
+	}
+
+	selectPosition(position) {
+		if (position === null) {
+			this.#possibleMovesForSelectedPosition = [];
+		} else {
+			this.#possibleMovesForSelectedPosition = this.getPossibleMoves(position);
+		}
+		console.log({ possibleMovesForSelectedPosition: this.#possibleMovesForSelectedPosition });
+	}
+
+	printBoard(empty = ".") {
+		console.log("");
 		let top = "     ";
 		for (let c = 0; c < this.#size; c++) {
 			top += c + " ";
@@ -180,11 +346,76 @@ class Game {
 			}
 			console.log(row);
 		}
+		console.log("");
+	}
+
+	printScore() {
+		console.log({ playerScore: this.#playerScore });
+	}
+
+	printActivePlayer() {
+		console.log({ activePlayer: this.#activePlayer });
+	}
+
+	printWinner() {
+		console.log({ winner: this.#winner });
+	}
+
+	printPastMoves() {
+		console.log(this.#pastMoves);
+	}
+
+	printStatus() {
+		this.printBoard();
+		this.printScore();
+		this.printActivePlayer();
+		this.printWinner();
 	}
 }
 
 const game = new Game();
 
-game.print();
+game.move({ r: 5, c: 0 }, { r: 3, c: 2 });
+game.move({ r: 2, c: 1 }, { r: 4, c: 3 });
+game.move({ r: 5, c: 2 }, { r: 3, c: 4 });
+game.move({ r: 2, c: 7 }, { r: 4, c: 5 });
+game.move({ r: 6, c: 1 }, { r: 5, c: 0 });
+game.move({ r: 2, c: 3 }, { r: 4, c: 1 });
+game.move({ r: 5, c: 0 }, { r: 3, c: 2 });
+game.move({ r: 2, c: 5 }, { r: 4, c: 3 });
+game.move({ r: 7, c: 0 }, { r: 6, c: 1 });
+game.move({ r: 4, c: 3 }, { r: 5, c: 2 });
+game.move({ r: 6, c: 1 }, { r: 5, c: 0 });
+game.move({ r: 5, c: 2 }, { r: 7, c: 0 });
+game.move({ r: 7, c: 2 }, { r: 6, c: 1 });
+game.move({ r: 7, c: 0 }, { r: 5, c: 2 });
+game.move({ r: 3, c: 2 }, { r: 2, c: 3 });
+game.move({ r: 1, c: 2 }, { r: 3, c: 0 });
+game.move({ r: 6, c: 3 }, { r: 4, c: 1 });
+game.move({ r: 0, c: 3 }, { r: 2, c: 1 });
+game.move({ r: 2, c: 3 }, { r: 1, c: 2 });
+game.move({ r: 4, c: 5 }, { r: 6, c: 3 });
+game.move({ r: 1, c: 2 }, { r: 0, c: 3 });
+game.move({ r: 6, c: 3 }, { r: 7, c: 2 });
+game.move({ r: 0, c: 3 }, { r: 2, c: 5 });
+game.move({ r: 7, c: 2 }, { r: 3, c: 6 });
+game.move({ r: 5, c: 6 }, { r: 1, c: 2 });
+game.move({ r: 3, c: 6 }, { r: 1, c: 4 });
+game.move({ r: 6, c: 7 }, { r: 2, c: 3 });
+game.move({ r: 3, c: 0 }, { r: 5, c: 2 });
+game.move({ r: 7, c: 4 }, { r: 6, c: 3 });
+game.move({ r: 5, c: 2 }, { r: 7, c: 4 });
+game.move({ r: 5, c: 0 }, { r: 3, c: 2 });
+game.move({ r: 2, c: 1 }, { r: 4, c: 3 });
+game.move({ r: 6, c: 5 }, { r: 5, c: 4 });
+game.move({ r: 4, c: 3 }, { r: 6, c: 5 });
+game.move({ r: 7, c: 6 }, { r: 6, c: 7 });
+game.move({ r: 1, c: 4 }, { r: 3, c: 2 });
+game.move({ r: 6, c: 7 }, { r: 5, c: 6 });
+game.move({ r: 0, c: 1 }, { r: 2, c: 3 });
+game.move({ r: 5, c: 6 }, { r: 3, c: 4 });
+game.move({ r: 2, c: 3 }, { r: 4, c: 5 });
 
-console.log(game.getPossibleMoves({ r: 2, c: 1 }));
+game.selectPosition({ r: 3, c: 2 });
+game.printPastMoves();
+game.printWinner();
