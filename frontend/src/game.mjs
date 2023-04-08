@@ -1,18 +1,34 @@
-// game states: activePlayer, playerScore, pastMoves, timeRemaining
-// game actions: movePiece
+// game states: board, activePlayer, playerScore, winner, selectedPosition, possibleMovesForSelectedPosition, pastMoves
+// game actions: movePiece, selectPosition		~expose these actions
+// player side: a, b
 
-const arguments = process.argv;
+// const args = process.argv;
 
-class Game {
-	#size;
-	#board;
-	#homeRows;
-	#activePlayer;
-	#playerScore;
-	#winner;
-	#selectedPosition;
-	#possibleMovesForSelectedPosition;
-	#pastMoves;
+// size;
+// homeRows;
+// board;
+// activePlayer;
+// playerScore;
+// winner;
+// selectedPosition;
+// possibleMovesForSelectedPosition;
+// pastMoves;
+// players;
+
+export default class Game {
+	size;
+	homeRows;
+	// below are states
+	board;
+	activePlayer;
+	playerScore;
+	winner;
+	selectedPosition;
+	possibleMovesForSelectedPosition;
+	pastMoves;
+	players;
+
+	setState;
 
 	// position = {r, c}
 
@@ -28,42 +44,66 @@ class Game {
 	}
 
 	startGame() {
-		this.#size = 8;
-		this.#board = [];
-		this.#homeRows = 3;
-		this.#activePlayer = "a";
-		this.#playerScore = { a: 0, b: 0 };
-		this.#winner = "pending";
-		this.#selectedPosition = null;
-		this.#possibleMovesForSelectedPosition = [];
-		this.#pastMoves = [];
+		this.size = 8;
+		this.board = [];
+		this.homeRows = 3;
+		this.activePlayer = "a";
+		this.playerScore = { a: 0, b: 0 };
+		this.winner = "pending";
+		this.selectedPosition = null;
+		this.possibleMovesForSelectedPosition = [];
+		this.pastMoves = [];
+		this.players = { a: "a", b: "b" };
+		// this.setState = null;
 
-		for (let r = 0; r < this.#size; r++) {
-			let row = new Array(this.#size).fill(" ");
-			this.#board.push(row);
+		for (let r = 0; r < this.size; r++) {
+			let row = new Array(this.size).fill(" ");
+			this.board.push(row);
 		}
-		for (let r = 0; r < this.#homeRows; r++) {
+		for (let r = 0; r < this.homeRows; r++) {
 			let start = r % 2 === 0 ? 1 : 0;
-			for (let c = start; c < this.#size; c += 2) {
-				this.#board[r][c] = "b";
+			for (let c = start; c < this.size; c += 2) {
+				this.board[r][c] = "b";
 			}
 		}
-		for (let r = this.#size - 1; r > this.#size - this.#homeRows - 1; r--) {
-			let start = (this.#size - r) % 2 === 0 ? 1 : 0;
-			for (let c = start; c < this.#size; c += 2) {
-				this.#board[r][c] = "a";
+		for (let r = this.size - 1; r > this.size - this.homeRows - 1; r--) {
+			let start = (this.size - r) % 2 === 0 ? 1 : 0;
+			for (let c = start; c < this.size; c += 2) {
+				this.board[r][c] = "a";
 			}
+		}
+
+		if (this.setState) {
+			// for first call to start, setState will be absent
+			this.setState(this.getState());
 		}
 
 		this.printStatus();
 	}
 
+	getState() {
+		return {
+			board: this.board,
+			activePlayer: this.activePlayer,
+			playerScore: this.playerScore,
+			winner: this.winner,
+			selectedPosition: this.selectedPosition,
+			possibleMovesForSelectedPosition: this.possibleMovesForSelectedPosition,
+			pastMoves: this.pastMoves,
+			players: this.players
+		};
+	}
+
+	registerSetState(setState) {
+		this.setState = setState;
+	}
+
 	getActivePlayer() {
-		return this.#activePlayer;
+		return this.activePlayer;
 	}
 
 	toggleActivePlayer() {
-		this.#activePlayer = this.#activePlayer === "a" ? "b" : "a";
+		this.activePlayer = this.activePlayer === "a" ? "b" : "a";
 	}
 
 	move(position1, position2) {
@@ -73,8 +113,8 @@ class Game {
 		const { r: r1, c: c1 } = position1;
 		const { r: r2, c: c2 } = position2;
 
-		const piece1 = this.#board[r1][c1];
-		const piece2 = this.#board[r2][c2];
+		const piece1 = this.board[r1][c1];
+		const piece2 = this.board[r2][c2];
 
 		if (this.isActivePlayer(piece1) === false) {
 			// console.log("player at position1 is not active player");
@@ -96,41 +136,44 @@ class Game {
 			this.areOppositePieces(p1, p2) === true
 		) {
 			// killing the opponent
-			this.#board[r1 + stepY][c1 + stepX] = " ";
+			this.board[r1 + stepY][c1 + stepX] = " ";
 			this.incrementActivePlayerScore();
 			// do further bonus moves till no such moves are avaiable
 		}
 
 		// moving the piece
-		[this.#board[r1][c1], this.#board[r2][c2]] = [this.#board[r2][c2], this.#board[r1][c1]];
+		[this.board[r1][c1], this.board[r2][c2]] = [this.board[r2][c2], this.board[r1][c1]];
 
 		// turning the piece1 to king if reached at opponent home
 		if (piece1 === "a" && r2 === 0) {
-			this.#board[r2][c2] = "A";
-		} else if (piece1 === "b" && r2 === this.#size - 1) {
-			this.#board[r2][c2] = "B";
+			this.board[r2][c2] = "A";
+		} else if (piece1 === "b" && r2 === this.size - 1) {
+			this.board[r2][c2] = "B";
 		}
 
-		this.#pastMoves.push({ from: position1, to: position2 });
+		this.pastMoves.push({ from: position1, to: position2 });
+		this.selectPosition(null);
 		this.updateWinner();
 		this.toggleActivePlayer();
+
+		this.setState(this.getState());
 
 		this.printStatus();
 	}
 
 	pieceAt(position) {
-		return this.#board[position.r][position.c];
+		return this.board[position.r][position.c];
 	}
 
 	incrementActivePlayerScore() {
-		this.#playerScore[this.#activePlayer]++;
+		this.playerScore[this.activePlayer]++;
 	}
 
 	isActivePlayer(piece) {
-		if (this.#activePlayer === "a" && (piece === "a" || piece === "A")) {
+		if (this.activePlayer === "a" && (piece === "a" || piece === "A")) {
 			return true;
 		}
-		if (this.#activePlayer === "b" && (piece === "b" || piece === "B")) {
+		if (this.activePlayer === "b" && (piece === "b" || piece === "B")) {
 			return true;
 		}
 		return false;
@@ -139,7 +182,7 @@ class Game {
 	getPossibleMoves(position) {
 		const { r, c } = position;
 		const possibleMoves = [];
-		const piece = this.#board[r][c];
+		const piece = this.board[r][c];
 
 		if (piece === " ") {
 			return possibleMoves;
@@ -211,8 +254,8 @@ class Game {
 
 		const { r: r1, c: c1 } = position1;
 		const { r: r2, c: c2 } = position2;
-		const piece1 = this.#board[r1][c1];
-		const piece2 = this.#board[r2][c2];
+		const piece1 = this.board[r1][c1];
+		const piece2 = this.board[r2][c2];
 
 		if (piece1 === " " || piece2 !== " ") {
 			// console.log("position1 should have a piece and position2 should be empty");
@@ -263,7 +306,7 @@ class Game {
 		while (position.r !== position2.r) {
 			position.r += stepY;
 			position.c += stepX;
-			if (this.#board[position.r][position.c] !== " ") {
+			if (this.board[position.r][position.c] !== " ") {
 				// console.log("path between position1 and position2 is not clean");
 				return false;
 			}
@@ -297,16 +340,16 @@ class Game {
 
 	isInsideBoard(position) {
 		return (
-			position.r >= 0 && position.r < this.#size && position.c >= 0 && position.c < this.#size
+			position.r >= 0 && position.r < this.size && position.c >= 0 && position.c < this.size
 		);
 	}
 
 	updateWinner() {
-		// winner = "pending" | "a" | "b"
+		// winner = "pending" | "a" | "b" | "tie"
 		let avaiableMoves = { a: 0, b: 0 };
-		for (let r = 0; r < this.#size; r++) {
-			for (let c = 0; c < this.#size; c++) {
-				const piece = this.#board[r][c];
+		for (let r = 0; r < this.size; r++) {
+			for (let c = 0; c < this.size; c++) {
+				const piece = this.board[r][c];
 				if (piece === "a" || piece === "A") {
 					avaiableMoves["a"] += this.getPossibleMoves({ r, c }).length;
 				} else if (piece === "b" || piece === "B") {
@@ -314,35 +357,49 @@ class Game {
 				}
 			}
 		}
-		if (this.#activePlayer === "a" && avaiableMoves["a"] === 0) {
-			this.#winner = "b";
-		} else if (this.#activePlayer === "b" && avaiableMoves["b"] === 0) {
-			this.#winner = "a";
+
+		if (avaiableMoves["a"] === 0 && avaiableMoves["b"] > 0) {
+			this.winner = "b";
+		} else if (avaiableMoves["b"] === 0 && avaiableMoves["a"] > 0) {
+			this.winner = "a";
+		} else if (avaiableMoves["a"] === 0 && avaiableMoves["b"] === 0) {
+			this.winner = "tie";
 		} else {
-			this.#winner = "pending";
+			this.winner = "pending";
 		}
+
+		console.log({ winner: this.winner });
+
+		this.setState(this.getState());
 	}
 
 	selectPosition(position) {
+		this.selectedPosition = position;
+
 		if (position === null) {
-			this.#possibleMovesForSelectedPosition = [];
+			this.possibleMovesForSelectedPosition = [];
 		} else {
-			this.#possibleMovesForSelectedPosition = this.getPossibleMoves(position);
+			const { r, c } = position;
+			if (this.isActivePlayer(this.board[r][c]) === false) {
+				return;
+			}
+			this.possibleMovesForSelectedPosition = this.getPossibleMoves(position);
 		}
-		console.log({ possibleMovesForSelectedPosition: this.#possibleMovesForSelectedPosition });
+
+		this.setState(this.getState());
 	}
 
 	printBoard(empty = ".") {
 		console.log("");
 		let top = "     ";
-		for (let c = 0; c < this.#size; c++) {
+		for (let c = 0; c < this.size; c++) {
 			top += c + " ";
 		}
 		console.log(top);
-		for (let r = 0; r < this.#size; r++) {
+		for (let r = 0; r < this.size; r++) {
 			let row = r + "    ";
-			for (let c = 0; c < this.#size; c++) {
-				row += (this.#board[r][c] === " " ? empty : this.#board[r][c]) + " ";
+			for (let c = 0; c < this.size; c++) {
+				row += (this.board[r][c] === " " ? empty : this.board[r][c]) + " ";
 			}
 			console.log(row);
 		}
@@ -350,72 +407,74 @@ class Game {
 	}
 
 	printScore() {
-		console.log({ playerScore: this.#playerScore });
+		console.log({ playerScore: this.playerScore });
 	}
 
 	printActivePlayer() {
-		console.log({ activePlayer: this.#activePlayer });
+		console.log({ activePlayer: this.activePlayer });
 	}
 
 	printWinner() {
-		console.log({ winner: this.#winner });
+		console.log({ winner: this.winner });
 	}
 
 	printPastMoves() {
-		console.log(this.#pastMoves);
+		console.log(this.pastMoves);
 	}
 
 	printStatus() {
-		this.printBoard();
-		this.printScore();
-		this.printActivePlayer();
-		this.printWinner();
+		return;
+		// this.printBoard();
+		// this.printScore();
+		// this.printActivePlayer();
+		// this.printWinner();
 	}
 }
 
-const game = new Game();
+export const game = new Game();
+console.log("game object is created");
 
-game.move({ r: 5, c: 0 }, { r: 3, c: 2 });
-game.move({ r: 2, c: 1 }, { r: 4, c: 3 });
-game.move({ r: 5, c: 2 }, { r: 3, c: 4 });
-game.move({ r: 2, c: 7 }, { r: 4, c: 5 });
-game.move({ r: 6, c: 1 }, { r: 5, c: 0 });
-game.move({ r: 2, c: 3 }, { r: 4, c: 1 });
-game.move({ r: 5, c: 0 }, { r: 3, c: 2 });
-game.move({ r: 2, c: 5 }, { r: 4, c: 3 });
-game.move({ r: 7, c: 0 }, { r: 6, c: 1 });
-game.move({ r: 4, c: 3 }, { r: 5, c: 2 });
-game.move({ r: 6, c: 1 }, { r: 5, c: 0 });
-game.move({ r: 5, c: 2 }, { r: 7, c: 0 });
-game.move({ r: 7, c: 2 }, { r: 6, c: 1 });
-game.move({ r: 7, c: 0 }, { r: 5, c: 2 });
-game.move({ r: 3, c: 2 }, { r: 2, c: 3 });
-game.move({ r: 1, c: 2 }, { r: 3, c: 0 });
-game.move({ r: 6, c: 3 }, { r: 4, c: 1 });
-game.move({ r: 0, c: 3 }, { r: 2, c: 1 });
-game.move({ r: 2, c: 3 }, { r: 1, c: 2 });
-game.move({ r: 4, c: 5 }, { r: 6, c: 3 });
-game.move({ r: 1, c: 2 }, { r: 0, c: 3 });
-game.move({ r: 6, c: 3 }, { r: 7, c: 2 });
-game.move({ r: 0, c: 3 }, { r: 2, c: 5 });
-game.move({ r: 7, c: 2 }, { r: 3, c: 6 });
-game.move({ r: 5, c: 6 }, { r: 1, c: 2 });
-game.move({ r: 3, c: 6 }, { r: 1, c: 4 });
-game.move({ r: 6, c: 7 }, { r: 2, c: 3 });
-game.move({ r: 3, c: 0 }, { r: 5, c: 2 });
-game.move({ r: 7, c: 4 }, { r: 6, c: 3 });
-game.move({ r: 5, c: 2 }, { r: 7, c: 4 });
-game.move({ r: 5, c: 0 }, { r: 3, c: 2 });
-game.move({ r: 2, c: 1 }, { r: 4, c: 3 });
-game.move({ r: 6, c: 5 }, { r: 5, c: 4 });
-game.move({ r: 4, c: 3 }, { r: 6, c: 5 });
-game.move({ r: 7, c: 6 }, { r: 6, c: 7 });
-game.move({ r: 1, c: 4 }, { r: 3, c: 2 });
-game.move({ r: 6, c: 7 }, { r: 5, c: 6 });
-game.move({ r: 0, c: 1 }, { r: 2, c: 3 });
-game.move({ r: 5, c: 6 }, { r: 3, c: 4 });
-game.move({ r: 2, c: 3 }, { r: 4, c: 5 });
+// game.move({ r: 5, c: 0 }, { r: 3, c: 2 });
+// game.move({ r: 2, c: 1 }, { r: 4, c: 3 });
+// game.move({ r: 5, c: 2 }, { r: 3, c: 4 });
+// game.move({ r: 2, c: 7 }, { r: 4, c: 5 });
+// game.move({ r: 6, c: 1 }, { r: 5, c: 0 });
+// game.move({ r: 2, c: 3 }, { r: 4, c: 1 });
+// game.move({ r: 5, c: 0 }, { r: 3, c: 2 });
+// game.move({ r: 2, c: 5 }, { r: 4, c: 3 });
+// game.move({ r: 7, c: 0 }, { r: 6, c: 1 });
+// game.move({ r: 4, c: 3 }, { r: 5, c: 2 });
+// game.move({ r: 6, c: 1 }, { r: 5, c: 0 });
+// game.move({ r: 5, c: 2 }, { r: 7, c: 0 });
+// game.move({ r: 7, c: 2 }, { r: 6, c: 1 });
+// game.move({ r: 7, c: 0 }, { r: 5, c: 2 });
+// game.move({ r: 3, c: 2 }, { r: 2, c: 3 });
+// game.move({ r: 1, c: 2 }, { r: 3, c: 0 });
+// game.move({ r: 6, c: 3 }, { r: 4, c: 1 });
+// game.move({ r: 0, c: 3 }, { r: 2, c: 1 });
+// game.move({ r: 2, c: 3 }, { r: 1, c: 2 });
+// game.move({ r: 4, c: 5 }, { r: 6, c: 3 });
+// game.move({ r: 1, c: 2 }, { r: 0, c: 3 });
+// game.move({ r: 6, c: 3 }, { r: 7, c: 2 });
+// game.move({ r: 0, c: 3 }, { r: 2, c: 5 });
+// game.move({ r: 7, c: 2 }, { r: 3, c: 6 });
+// game.move({ r: 5, c: 6 }, { r: 1, c: 2 });
+// game.move({ r: 3, c: 6 }, { r: 1, c: 4 });
+// game.move({ r: 6, c: 7 }, { r: 2, c: 3 });
+// game.move({ r: 3, c: 0 }, { r: 5, c: 2 });
+// game.move({ r: 7, c: 4 }, { r: 6, c: 3 });
+// game.move({ r: 5, c: 2 }, { r: 7, c: 4 });
+// game.move({ r: 5, c: 0 }, { r: 3, c: 2 });
+// game.move({ r: 2, c: 1 }, { r: 4, c: 3 });
+// game.move({ r: 6, c: 5 }, { r: 5, c: 4 });
+// game.move({ r: 4, c: 3 }, { r: 6, c: 5 });
+// game.move({ r: 7, c: 6 }, { r: 6, c: 7 });
+// game.move({ r: 1, c: 4 }, { r: 3, c: 2 });
+// game.move({ r: 6, c: 7 }, { r: 5, c: 6 });
+// game.move({ r: 0, c: 1 }, { r: 2, c: 3 });
+// game.move({ r: 5, c: 6 }, { r: 3, c: 4 });
+// game.move({ r: 2, c: 3 }, { r: 4, c: 5 });
 
-game.selectPosition({ r: 3, c: 2 });
-game.printPastMoves();
-game.printWinner();
+// game.selectPosition({ r: 3, c: 2 });
+// game.printPastMoves();
+// game.printWinner();
