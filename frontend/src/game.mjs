@@ -53,7 +53,8 @@ export default class Game {
 		this.selectedPosition = null;
 		this.possibleMovesForSelectedPosition = [];
 		this.pastMoves = [];
-		this.players = { a: "a", b: "b" };
+		this.players = { a: "", b: "" };
+		// this.players = { a: "a", b: "b" };
 		// this.setState = null;
 
 		for (let r = 0; r < this.size; r++) {
@@ -75,14 +76,31 @@ export default class Game {
 
 		if (this.setState) {
 			// for first call to start, setState will be absent
-			this.setState(this.getState());
+			this.updateStateLocallyAndRemotely(this.getState());
 		}
 
 		this.printStatus();
 	}
 
+	addPlayer(player) {
+		if (this.players.a === "") {
+			this.players.a = player;
+			this.updateStateLocallyAndRemotely();
+		} else if (this.players.b === "") {
+			this.players.b = player;
+			this.updateStateLocallyAndRemotely();
+		}
+	}
+
+	updateStateLocallyAndRemotely() {
+		this.setState(this.getState());
+		// axios request
+	}
+
 	getState() {
 		return {
+			size: this.size,
+			homeRows: this.homeRows,
 			board: this.board,
 			activePlayer: this.activePlayer,
 			playerScore: this.playerScore,
@@ -106,9 +124,21 @@ export default class Game {
 		this.activePlayer = this.activePlayer === "a" ? "b" : "a";
 	}
 
-	move(position1, position2) {
-		console.log("\n\n\n");
+	isWrongPlayer(iAm) {
+		// return false;
+		return iAm !== this.activePlayer;
+	}
+
+	move(position1, position2, iAm) {
 		console.log("move", position1, position2);
+
+		if (this.players.a === "" || this.players.b === "") {
+			return;
+		}
+
+		if (this.isWrongPlayer(iAm)) {
+			return;
+		}
 
 		const { r: r1, c: c1 } = position1;
 		const { r: r2, c: c2 } = position2;
@@ -152,11 +182,11 @@ export default class Game {
 		}
 
 		this.pastMoves.push({ from: position1, to: position2 });
-		this.selectPosition(null);
+		this.selectPosition(null); // iAm
 		this.updateWinner();
 		this.toggleActivePlayer();
 
-		this.setState(this.getState());
+		this.updateStateLocallyAndRemotely(this.getState());
 
 		this.printStatus();
 	}
@@ -368,25 +398,33 @@ export default class Game {
 			this.winner = "pending";
 		}
 
-		console.log({ winner: this.winner });
-
-		this.setState(this.getState());
+		this.updateStateLocallyAndRemotely(this.getState());
 	}
 
-	selectPosition(position) {
+	selectPosition(position, iAm) {
+		if (this.players.a === "" || this.players.b === "") {
+			console.log("Atleast one player is missing");
+			return;
+		}
+
+		// if (this.isWrongPlayer(iAm)) {
+		// 	console.log("You are not allowed to select it");
+		// 	return;
+		// }
+
 		this.selectedPosition = position;
 
-		if (position === null) {
+		if (this.selectedPosition === null) {
 			this.possibleMovesForSelectedPosition = [];
 		} else {
-			const { r, c } = position;
+			const { r, c } = this.selectedPosition;
 			if (this.isActivePlayer(this.board[r][c]) === false) {
 				return;
 			}
-			this.possibleMovesForSelectedPosition = this.getPossibleMoves(position);
+			this.possibleMovesForSelectedPosition = this.getPossibleMoves(this.selectedPosition);
 		}
 
-		this.setState(this.getState());
+		this.updateStateLocallyAndRemotely(this.getState());
 	}
 
 	printBoard(empty = ".") {

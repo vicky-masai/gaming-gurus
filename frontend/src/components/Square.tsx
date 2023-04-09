@@ -3,24 +3,26 @@ import { positionType, squareType } from "../types";
 import { game } from "../game.mjs";
 import Game from "../game.mjs";
 
-export default function Square({ position, piece, selectedPosition }: squareType) {
+export default function Square({ position, piece, selectedPosition, iAm }: squareType) {
+	const remainder1 = position.r % 2;
+	const remainder2 = position.c % 2;
+
 	const style = {
 		display: "flex",
 		justifyContent: "center",
 		alignItems: "center",
-		backgroundColor: "#33aa33",
+		backgroundColor: remainder1 === remainder2 ? "aaffaa" : "#33aa33",
 		width: "4vw",
 		height: "4vw"
 	};
 
 	const handleClick = () => {
+		console.log(game.possibleMovesForSelectedPosition);
 		if (isExistInPossibilities(position, game) === true) {
-			console.log({ selectedPosition: game.selectedPosition, position });
-			game.move(game.selectedPosition, position);
+			game.move(game.selectedPosition, position, iAm);
 		} else {
-			console.log("before", game.selectedPosition);
-			game.selectPosition(position);
-			console.log("after", game.selectedPosition, game.possibleMovesForSelectedPosition);
+			console.log("object passed to select position", position);
+			game.selectPosition(position, iAm);
 		}
 	};
 

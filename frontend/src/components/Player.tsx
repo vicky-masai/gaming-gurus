@@ -6,8 +6,6 @@ export default function Player({ name = "Player", player = "a", score = 0, activ
 			  }
 			: {};
 
-	console.log({ player, activePlayer });
-
 	return (
 		<div
 			style={{
