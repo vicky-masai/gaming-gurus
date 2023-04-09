@@ -12,7 +12,7 @@ const Chat = () => {
 
     const [currentMessage, setCurrentMessage] = useState<string>("");
     const [messageList, setMessageList] = useState<Msg[]>([]);
-const socket= io("http://localhost:8080",{transports:["websocket"]})
+const socket= io("https://chat-backend-saurabh.onrender.com",{transports:["websocket"]})
   
     const sendMessage = async () => {
       if (currentMessage !== "") {
