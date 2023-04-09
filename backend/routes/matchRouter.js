@@ -25,8 +25,9 @@ matchRouter.get("/:_id", async (req, res) => {
 matchRouter.post("/new", async (req, res) => {
 	try {
 		const matches = await MatchModel.find({});
-		for (let matchDoc of matches) {
-			if (matchDoc.players.b === "") {
+		for (let i = 0; i < matches.length; i++) {
+			let matchDoc = matches[i];
+			if (i === matches.length - 1 && matchDoc.players.b === "") {
 				matchDoc.players.b = "b";
 				matchDoc.isNew = false;
 				matchDoc = await matchDoc.save();

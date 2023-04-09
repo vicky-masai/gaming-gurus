@@ -49,8 +49,10 @@ export default function Checkers() {
 				setMatchId(match._id);
 				if (match.players.b === "") {
 					setIAm("a");
+					console.log({ iAm, match });
 				} else {
 					setIAm("b");
+					console.log({ iAm, match });
 				}
 			} catch (error: any) {
 				console.log({ error: error.message });

@@ -11,7 +11,7 @@ export default function Square({ position, piece, selectedPosition, iAm }: squar
 		display: "flex",
 		justifyContent: "center",
 		alignItems: "center",
-		backgroundColor: remainder1 === remainder2 ? "aaffaa" : "#33aa33",
+		backgroundColor: remainder1 === remainder2 ? "#ddffdd" : "#33aa33",
 		width: "4vw",
 		height: "4vw"
 	};

@@ -1,24 +1,12 @@
-// game states: board, activePlayer, playerScore, winner, selectedPosition, possibleMovesForSelectedPosition, pastMoves
-// game actions: movePiece, selectPosition		~expose these actions
-// player side: a, b
+// game states: size, homeRows, board, activePlayer, playerScore, winner, selectedPosition, possibleMovesForSelectedPosition, pastMoves, players
+// game actions: movePiece, selectPosition, startGame		~expose these actions
+// player iAm: a, b
 
 // const args = process.argv;
-
-// size;
-// homeRows;
-// board;
-// activePlayer;
-// playerScore;
-// winner;
-// selectedPosition;
-// possibleMovesForSelectedPosition;
-// pastMoves;
-// players;
 
 export default class Game {
 	size;
 	homeRows;
-	// below are states
 	board;
 	activePlayer;
 	playerScore;
@@ -168,7 +156,7 @@ export default class Game {
 			// killing the opponent
 			this.board[r1 + stepY][c1 + stepX] = " ";
 			this.incrementActivePlayerScore();
-			// do further bonus moves till no such moves are avaiable
+			// do further bonus moves till no possible moves are avaiable
 		}
 
 		// moving the piece
@@ -271,8 +259,6 @@ export default class Game {
 			position2BottomRight.c++;
 		}
 
-		// adding killing moves if any
-
 		return possibleMoves;
 	}
 
@@ -305,7 +291,7 @@ export default class Game {
 			return false;
 		}
 
-		// path should be clean to be it possible move except
+		// path should be clean to be it possible move except for killing move
 
 		const diagonalDistance = this.diagonalDistance(position1, position2);
 
@@ -329,7 +315,7 @@ export default class Game {
 
 		// here position2 is away from position1 by more that 1 square diagonally
 
-		// if path is clean between the positions, return true, else false
+		// if path is clean between the positions, return true, else return false
 
 		const position = { r: r1, c: c1 };
 
