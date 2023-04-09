@@ -1,13 +1,9 @@
-import Allroutes from "./Pages/Allroutes";
-import Chess from "./components/Chess";
-import "./App.css"
-
+import Checkers from "./components/Checkers";
 
 export default function App() {
-  return (
-    <div>
-      {/* <Chess /> */}
-      <Allroutes/>
-    </div>
-  )
+	return (
+		<div>
+			<Checkers />
+		</div>
+	);
 }
