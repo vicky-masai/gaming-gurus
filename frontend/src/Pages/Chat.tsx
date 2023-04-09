@@ -12,7 +12,7 @@ const Chat = () => {
 
     const [currentMessage, setCurrentMessage] = useState<string>("");
     const [messageList, setMessageList] = useState<Msg[]>([]);
-const socket= io("http://localhost:8080",{transports:["websocket"]})
+const socket= io("http://localhost:3001",{transports:["websocket"]})
   
     const sendMessage = async () => {
       if (currentMessage !== "") {
@@ -27,6 +27,7 @@ const socket= io("http://localhost:8080",{transports:["websocket"]})
         };
   
         await socket.emit("send_message", messageData);
+		console.log("message sent", messageData)
         setMessageList((list:Msg[]) => [...list, messageData]);
         setCurrentMessage("");
       }

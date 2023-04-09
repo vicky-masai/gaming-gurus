@@ -1,9 +1,9 @@
-import Checkers from "./components/Checkers";
+import Allroutes from "./Pages/Allroutes";
 
 export default function App() {
 	return (
 		<div>
-			<Checkers />
+			<Allroutes />
 		</div>
 	);
 }
