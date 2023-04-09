@@ -15,7 +15,7 @@ const Chat = () => {
 const socket= io("https://chat-backend-saurabh.onrender.com",{transports:["websocket"]})
   
     const sendMessage = async () => {
-      if (currentMessage !== "") {
+      if (currentMessage !== "") { 
         const messageData:Msg = {
           room: rooms,
           author: user,
