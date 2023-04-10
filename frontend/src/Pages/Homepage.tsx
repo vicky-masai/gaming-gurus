@@ -3,9 +3,9 @@ import io from "socket.io-client";
 import { useState } from "react";
 import {Link} from "react-router-dom"
 // const socket= io.connect("http://localhost:3001");
-const socket= io("http://localhost:3001",{transports:["websocket"]})
-let user:string = ""
-let rooms:string = "";
+const socket= io("https://chat-backend-saurabh.onrender.com/",{transports:["websocket"]})
+let user:string
+let rooms:string;
 const Homepage = () => {
     const [username, setUsername] = useState<string>("");
     const [room, setRoom] = useState<string>("");
@@ -39,14 +39,14 @@ const Homepage = () => {
               setRoom(event.target.value);
             }}
           />
-        <Link to="/checkers"><button onClick={joinRoom}>Join A Room</button></Link>
+        <Link to="/game"><button onClick={joinRoom}>Join A Room</button></Link>
         </div>
         </div>
   )
 }
 
 export default Homepage
-export {rooms}
+export {rooms,socket}
 export {user}
 
-console.log({rooms, user})
+

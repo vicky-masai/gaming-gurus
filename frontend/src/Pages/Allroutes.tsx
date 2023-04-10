@@ -3,7 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import Homepage from "./Homepage";
 import Chat from "./Chat";
 import Checkers from "../components/Checkers";
-// import Game from "./Game"
+import Game from "./Game"
 
 const Allroutes = () => {
 	return (
@@ -12,7 +12,7 @@ const Allroutes = () => {
 			<Route path="/chat" element={<Chat />} />
 			<Route path="/checkers" element={<Checkers />} />
 
-			{/* <Route path="/game" element={<Game />} /> */}
+			<Route path="/game" element={<Game />} />
 		</Routes>
 	);
 };
