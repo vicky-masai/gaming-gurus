@@ -4,6 +4,7 @@ import Square from "./Square";
 import Player from "./Player";
 import { positionType } from "../types";
 import axios from "axios";
+import Chat from "../Pages/Chat";
 
 // const game = new Game();
 
@@ -104,9 +105,9 @@ export default function Checkers() {
 	}
 
 	return (
-		<>
+		<div>
 			<Player
-				name={iAm === "a" ? "Blake" : iAm === "b" ? "Allison" : "Player"}
+				name={iAm === "a" ? "Rajesh" : iAm === "b" ? "Vicky" : "Player"}
 				player={iAm === "a" ? "b" : "a"}
 				score={game.playerScore[iAm === "a" ? "b" : "a"]}
 				activePlayer={game.activePlayer}
@@ -125,12 +126,12 @@ export default function Checkers() {
 				{getSquares(game.board, game.selectedPosition, iAm)}
 			</div>
 			<Player
-				name={iAm === "a" ? "Allision" : iAm === "b" ? "Blake" : "Player"}
+				name={iAm === "a" ? "Vicky" : iAm === "b" ? "Rajesh" : "Player"}
 				player={iAm}
 				score={game.playerScore[iAm]}
 				activePlayer={game.activePlayer}
 			/>
-		</>
+		</div>
 	);
 }
 

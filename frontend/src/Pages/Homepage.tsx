@@ -39,7 +39,7 @@ const Homepage = () => {
               setRoom(event.target.value);
             }}
           />
-        <Link to="/chat"><button onClick={joinRoom}>Join A Room</button></Link>
+        <Link to="/game"><button onClick={joinRoom}>Join A Room</button></Link>
         </div>
         </div>
   )
@@ -48,3 +48,5 @@ const Homepage = () => {
 export default Homepage
 export {rooms,socket}
 export {user}
+
+

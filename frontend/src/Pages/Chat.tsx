@@ -27,6 +27,7 @@ const Chat = () => {
         };
     console.log(messageList)
         await socket.emit("send_message", messageData);
+		console.log("message sent", messageData)
         setMessageList((list:Msg[]) => [...list, messageData]);
         setCurrentMessage("");
       }
